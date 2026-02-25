@@ -1,0 +1,8 @@
+include ':app'
+include ':capacitor-cordova-android-plugins'
+project(':capacitor-cordova-android-plugins').projectDir = new File('./capacitor-cordova-android-plugins/')
+
+// ✅ ADICIONADO: Capacitor Share Plugin
+include ':capacitor-share'
+
+apply from: 'capacitor.settings.gradle'

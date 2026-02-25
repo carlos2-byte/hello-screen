@@ -1,0 +1,40 @@
+# ================= LOGS =================
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# ================= NODE =================
+node_modules/
+dist/
+dist-ssr/
+*.local
+
+# ================= EDITORES =================
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# ================= ANDROID / CAPACITOR =================
+android/app/build/
+android/.gradle/
+android/local.properties
+*.iml
+
+# ================= PASTAS GERADAS =================
+APK 21-02-2026/
+
+# ================= TEMPORÁRIOS =================
+*.tmp
+*.temp
+*.bak
+*.swp

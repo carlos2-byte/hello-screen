@@ -1,0 +1,48 @@
+name: Build Android APK (GitHub Only)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Instalar dependências (modo compatível)
+        run: npm install --legacy-peer-deps
+
+      # ⚠️ IMPORTANTE: garante que Expo existe antes do prebuild
+      - name: Garantir Expo correto
+        run: npm install expo@54.0.33 --save --legacy-peer-deps
+
+      # Gera android/ corretamente SEM tentar instalar nada de novo
+      - name: Gerar pastas nativas
+        run: npx expo prebuild --no-install
+
+      - name: Setup JDK (Android precisa disso)
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      # Garante NODE_ENV=production para evitar erro de bundle
+      - name: Gerar bundle JS + APK (Release)
+        run: |
+          export NODE_ENV=production
+          cd android
+          ./gradlew clean assembleRelease
+
+      - name: Salvar APK Release
+        uses: actions/upload-artifact@v4
+        with:
+          name: ControleDeFinancas-release
+          path: android/app/build/outputs/apk/release/ControleDeFinancas-release.apk

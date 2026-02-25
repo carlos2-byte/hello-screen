@@ -1,0 +1,176 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Controle de Finanças Design System
+   Paleta verde/azul para finanças saudáveis
+   Tema escuro como padrão
+   All colors MUST be HSL.
+*/
+
+@layer base {
+  :root {
+    /* Light theme */
+    --background: 210 20% 98%;
+    --foreground: 220 20% 10%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 220 20% 10%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 220 20% 10%;
+
+    --primary: 152 60% 42%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 210 20% 94%;
+    --secondary-foreground: 220 20% 20%;
+
+    --muted: 210 15% 92%;
+    --muted-foreground: 220 10% 45%;
+
+    --accent: 200 80% 50%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+
+    --success: 152 60% 42%;
+    --success-foreground: 0 0% 100%;
+
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 100%;
+
+    --border: 220 13% 88%;
+    --input: 220 13% 88%;
+    --ring: 152 60% 42%;
+
+    --radius: 0.75rem;
+
+    --chart-1: 152 60% 42%;
+    --chart-2: 200 80% 50%;
+    --chart-3: 38 92% 50%;
+    --chart-4: 280 65% 60%;
+    --chart-5: 0 72% 51%;
+    --chart-6: 180 60% 45%;
+  }
+
+  .dark {
+    /* Dark theme - default */
+    --background: 222 25% 8%;
+    --foreground: 210 20% 96%;
+
+    --card: 222 25% 12%;
+    --card-foreground: 210 20% 96%;
+
+    --popover: 222 25% 12%;
+    --popover-foreground: 210 20% 96%;
+
+    --primary: 152 55% 50%;
+    --primary-foreground: 222 25% 8%;
+
+    --secondary: 222 20% 18%;
+    --secondary-foreground: 210 20% 90%;
+
+    --muted: 222 20% 16%;
+    --muted-foreground: 220 10% 55%;
+
+    --accent: 200 75% 55%;
+    --accent-foreground: 222 25% 8%;
+
+    --destructive: 0 65% 50%;
+    --destructive-foreground: 0 0% 100%;
+
+    --success: 152 55% 50%;
+    --success-foreground: 222 25% 8%;
+
+    --warning: 38 90% 55%;
+    --warning-foreground: 222 25% 8%;
+
+    --border: 222 20% 20%;
+    --input: 222 20% 20%;
+    --ring: 152 55% 50%;
+
+    --chart-1: 152 55% 50%;
+    --chart-2: 200 75% 55%;
+    --chart-3: 38 90% 55%;
+    --chart-4: 280 60% 65%;
+    --chart-5: 0 65% 55%;
+    --chart-6: 180 55% 50%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+
+  /* Default to dark theme */
+  html {
+    @apply dark;
+  }
+}
+
+@layer utilities {
+  /* Currency formatting */
+  .currency-positive {
+    @apply text-success;
+  }
+
+  .currency-negative {
+    @apply text-destructive;
+  }
+
+  /* Mobile-first utilities */
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 0);
+  }
+
+  .safe-top {
+    padding-top: env(safe-area-inset-top, 0);
+  }
+
+  /* Smooth animations */
+  .animate-slide-up {
+    animation: slideUp 0.3s ease-out;
+  }
+
+  .animate-fade-in {
+    animation: fadeIn 0.2s ease-out;
+  }
+
+  @keyframes slideUp {
+    from {
+      transform: translateY(100%);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  /* Page title font */
+  .page-title {
+    font-weight: bold;
+  }
+
+  /* Tap highlight removal for mobile */
+  .tap-highlight-none {
+    -webkit-tap-highlight-color: transparent;
+  }
+}
