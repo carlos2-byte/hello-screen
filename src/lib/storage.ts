@@ -30,6 +30,7 @@ export interface Transaction {
   isInvoicePayment?: boolean; // Marks transactions that are invoice payments
   paidInvoiceCardId?: string; // The card whose invoice was paid
   paidInvoiceMonth?: string; // The month of the paid invoice
+  mandatoryAccountId?: string; // Salary account that must pay this expense
 }
 
 export interface CreditCard {
@@ -43,6 +44,7 @@ export interface CreditCard {
   canPayOtherCards?: boolean; // If this card can be used to pay other cards' invoices
   defaultPayerCardId?: string; // Which card pays this card's invoice by default
   isDefault?: boolean; // Only one card can be default at a time
+  mandatoryAccountId?: string; // Salary account that must pay this card's invoice
 }
 
 export interface AppSettings {
@@ -352,10 +354,12 @@ const COVERAGE_RECORDS_KEY = 'investment_coverage_records';
 const PENDING_TRANSFER_KEY = 'pending_balance_transfer';
 const TRANSFER_HISTORY_KEY = 'balance_transfer_history';
 const ORIGINAL_LIMITS_KEY = 'original_card_limits';
+const SALARY_ACCOUNTS_KEY_EXPORT = 'salary_accounts';
+const SALARY_INCOME_KEY_EXPORT = 'salary_income_entries';
 
 // Export/Import
 export async function exportAllData(includeInvestments: boolean = true): Promise<string> {
-  const [transactions, cards, settings, securityConfig, customCategories, paymentStatus, coverageRecords, pendingTransfer, transferHistory, originalLimits] = await Promise.all([
+  const [transactions, cards, settings, securityConfig, customCategories, paymentStatus, coverageRecords, pendingTransfer, transferHistory, originalLimits, salaryAccounts, salaryIncome] = await Promise.all([
     listTransactionObjects(),
     getCreditCards(),
     getSettings(),
@@ -366,6 +370,8 @@ export async function exportAllData(includeInvestments: boolean = true): Promise
     defaultAdapter.getItem(PENDING_TRANSFER_KEY, null),
     defaultAdapter.getItem(TRANSFER_HISTORY_KEY, []),
     defaultAdapter.getItem(ORIGINAL_LIMITS_KEY, null),
+    defaultAdapter.getItem(SALARY_ACCOUNTS_KEY_EXPORT, []),
+    defaultAdapter.getItem(SALARY_INCOME_KEY_EXPORT, []),
   ]);
   
   const data: Record<string, unknown> = {
@@ -382,6 +388,8 @@ export async function exportAllData(includeInvestments: boolean = true): Promise
     pendingTransfer,
     transferHistory,
     originalLimits,
+    salaryAccounts,
+    salaryIncome,
   };
   
   if (includeInvestments) {
@@ -446,6 +454,12 @@ export async function importAllData(jsonString: string): Promise<void> {
   }
   if (data.originalLimits !== undefined) {
     await defaultAdapter.setItem(ORIGINAL_LIMITS_KEY, data.originalLimits);
+  }
+  if (data.salaryAccounts !== undefined) {
+    await defaultAdapter.setItem(SALARY_ACCOUNTS_KEY_EXPORT, data.salaryAccounts);
+  }
+  if (data.salaryIncome !== undefined) {
+    await defaultAdapter.setItem(SALARY_INCOME_KEY_EXPORT, data.salaryIncome);
   }
 }
 

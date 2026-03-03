@@ -12,6 +12,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { CreditCard } from '@/lib/storage';
+import { AccountSelector } from '@/components/salary/AccountSelector';
 
 interface AddCardSheetProps {
   open: boolean;
@@ -29,6 +30,7 @@ export function AddCardSheet({ open, onOpenChange, cards = [], onSubmit }: AddCa
   const [defaultPayerCardId, setDefaultPayerCardId] = useState<string>('');
   const [isDefault, setIsDefault] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [mandatoryAccountId, setMandatoryAccountId] = useState('');
 
   // Filter available payer cards (cards that can pay other cards)
   const availablePayerCards = cards.filter(c => c.canPayOtherCards !== false);
@@ -41,6 +43,7 @@ export function AddCardSheet({ open, onOpenChange, cards = [], onSubmit }: AddCa
     setDueDay('5');
     setDefaultPayerCardId('');
     setIsDefault(false);
+    setMandatoryAccountId('');
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -57,6 +60,7 @@ export function AddCardSheet({ open, onOpenChange, cards = [], onSubmit }: AddCa
         dueDay: parseInt(dueDay),
         defaultPayerCardId: defaultPayerCardId || undefined,
         isDefault: isDefault || undefined,
+        mandatoryAccountId: mandatoryAccountId || undefined,
       });
       resetForm();
       onOpenChange(false);
@@ -146,6 +150,13 @@ export function AddCardSheet({ open, onOpenChange, cards = [], onSubmit }: AddCa
 ...
             </div>
           )}
+
+          {/* Mandatory Salary Account */}
+          <AccountSelector
+            value={mandatoryAccountId}
+            onChange={setMandatoryAccountId}
+            label="Conta obrigatória para fatura"
+          />
 
           <Button type="submit" className="w-full" disabled={isSubmitting}>
             {isSubmitting ? 'Salvando...' : 'Adicionar Cartão'}

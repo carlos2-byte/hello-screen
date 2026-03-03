@@ -13,6 +13,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { CreditCard } from '@/lib/storage';
+import { AccountSelector } from '@/components/salary/AccountSelector';
 
 interface EditCardSheetProps {
   open: boolean;
@@ -32,6 +33,7 @@ export function EditCardSheet({ open, onOpenChange, card, cards = [], onSubmit }
   const [defaultPayerCardId, setDefaultPayerCardId] = useState<string>('');
   const [isDefault, setIsDefault] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [mandatoryAccountId, setMandatoryAccountId] = useState('');
 
   // Filter available payer cards (exclude current card and cards that cannot pay other cards)
   const availablePayerCards = cards.filter(c => 
@@ -48,6 +50,7 @@ export function EditCardSheet({ open, onOpenChange, card, cards = [], onSubmit }
       setCanPayOtherCards(card.canPayOtherCards !== false);
       setDefaultPayerCardId(card.defaultPayerCardId || '');
       setIsDefault(card.isDefault === true);
+      setMandatoryAccountId(card.mandatoryAccountId || '');
     }
   }, [card, open]);
 
@@ -67,6 +70,7 @@ export function EditCardSheet({ open, onOpenChange, card, cards = [], onSubmit }
         canPayOtherCards,
         defaultPayerCardId: defaultPayerCardId || undefined,
         isDefault: isDefault || undefined,
+        mandatoryAccountId: mandatoryAccountId || undefined,
       });
       onOpenChange(false);
     } finally {
@@ -189,6 +193,13 @@ export function EditCardSheet({ open, onOpenChange, card, cards = [], onSubmit }
               )}
             </div>
           )}
+
+          {/* Mandatory Salary Account */}
+          <AccountSelector
+            value={mandatoryAccountId}
+            onChange={setMandatoryAccountId}
+            label="Conta obrigatória para fatura"
+          />
 
           <Button type="submit" className="w-full" disabled={isSubmitting}>
             {isSubmitting ? 'Salvando...' : 'Salvar Alterações'}

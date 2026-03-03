@@ -18,6 +18,7 @@ import CardsPage from "./pages/CardsPage";
 import CardStatementPage from "./pages/CardStmtPage";
 import SettingsPage from "./pages/SettingsPage";
 import InvestmentsPage from "./pages/InvestPage";
+import SalaryAccountsPage from "./pages/SalaryAccountsPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -114,6 +115,7 @@ function AppContent() {
           <Route path="/investments" element={<InvestmentsPage />} />
           <Route path="/cards" element={<CardsPage />} />
           <Route path="/cards/:cardId" element={<CardStatementPage />} />
+          <Route path="/salary" element={<SalaryAccountsPage />} />
           <Route path="/settings" element={<SettingsPage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>

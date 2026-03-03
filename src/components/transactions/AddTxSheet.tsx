@@ -17,6 +17,7 @@ import { getLocalDateString, getInvoiceMonth, addMonthsToDate, addYearsToDate } 
 import { cn } from '@/lib/utils';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Repeat, Calendar, CreditCard as CardIcon, Package, Banknote, Wallet } from 'lucide-react';
+import { AccountSelector } from '@/components/salary/AccountSelector';
 
 interface AddTransactionSheetProps {
   open: boolean;
@@ -58,6 +59,7 @@ export function AddTransactionSheet({
   const [recurrenceEndDate, setRecurrenceEndDate] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [allCategories, setAllCategories] = useState(defaultCategories);
+  const [mandatoryAccountId, setMandatoryAccountId] = useState('');
 
   // Load custom categories
   useEffect(() => {
@@ -87,6 +89,7 @@ export function AddTransactionSheet({
         setIsRecurring(false);
         setRecurrenceType('monthly');
         setRecurrenceEndDate('');
+        setMandatoryAccountId(editingTransaction.mandatoryAccountId || '');
       } else {
         setType('expense');
         setAmount('');
@@ -102,6 +105,7 @@ export function AddTransactionSheet({
         setIsRecurring(false);
         setRecurrenceType('monthly');
         setRecurrenceEndDate('');
+        setMandatoryAccountId('');
       }
     }
   }, [open, editingTransaction, cards]);
@@ -135,6 +139,7 @@ export function AddTransactionSheet({
           isCardPayment,
           cardId: isCardPayment ? cardId : undefined,
           invoiceMonth,
+          mandatoryAccountId: mandatoryAccountId || undefined,
         },
         {
           installments: actualInstallments > 1 ? actualInstallments : undefined,
@@ -399,6 +404,14 @@ export function AddTransactionSheet({
                   </div>
                 )}
               </>
+            )}
+
+            {/* Mandatory Salary Account (for expenses) */}
+            {type === 'expense' && (
+              <AccountSelector
+                value={mandatoryAccountId}
+                onChange={setMandatoryAccountId}
+              />
             )}
 
             {/* Submit Button */}

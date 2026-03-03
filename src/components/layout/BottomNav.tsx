@@ -1,4 +1,4 @@
-import { Home, BarChart3, CreditCard, Settings, TrendingUp } from 'lucide-react';
+import { Home, BarChart3, CreditCard, Settings, TrendingUp, Wallet } from 'lucide-react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 
@@ -7,6 +7,7 @@ const navItems = [
   { to: '/dashboard', icon: BarChart3, label: 'Relatório' },
   { to: '/investments', icon: TrendingUp, label: 'Invest.' },
   { to: '/cards', icon: CreditCard, label: 'Cartões' },
+  { to: '/salary', icon: Wallet, label: 'Contas' },
   { to: '/settings', icon: Settings, label: 'Config' },
 ];
 
