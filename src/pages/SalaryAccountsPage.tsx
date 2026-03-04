@@ -230,8 +230,8 @@ export default function SalaryAccountsPage() {
         open={showIncomeSheet}
         onOpenChange={setShowIncomeSheet}
         account={selectedAccount}
-        onSubmit={async (data) => {
-          await addIncome(data);
+        onSubmit={async (data, options) => {
+          await addIncome(data, options);
           refresh();
         }}
       />
