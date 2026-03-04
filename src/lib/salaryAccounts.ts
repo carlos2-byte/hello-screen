@@ -5,7 +5,7 @@ export interface SalaryAccount {
   name: string;
   payDay: number; // Day of month salary is deposited
   canReceiveTransfers: boolean;
-  // balance is NO LONGER stored - it's calculated dynamically
+  active?: boolean; // Defaults to true
 }
 
 const SALARY_ACCOUNTS_KEY = 'salary_accounts';
@@ -24,8 +24,15 @@ export interface SalaryIncomeEntry {
 // CRUD for salary accounts
 export async function getSalaryAccounts(): Promise<SalaryAccount[]> {
   const raw = (await defaultAdapter.getItem<any[]>(SALARY_ACCOUNTS_KEY, [])) ?? [];
-  // Strip legacy balance field if present
-  return raw.map(({ balance, ...rest }) => rest as SalaryAccount);
+  return raw.map(({ balance, ...rest }) => ({
+    ...rest,
+    active: rest.active !== false, // Default to true
+  } as SalaryAccount));
+}
+
+export async function getActiveSalaryAccounts(): Promise<SalaryAccount[]> {
+  const accounts = await getSalaryAccounts();
+  return accounts.filter(a => a.active !== false);
 }
 
 export async function getSalaryAccountById(id: string): Promise<SalaryAccount | undefined> {
@@ -35,7 +42,7 @@ export async function getSalaryAccountById(id: string): Promise<SalaryAccount | 
 
 export async function addSalaryAccount(account: SalaryAccount): Promise<void> {
   const accounts = await getSalaryAccounts();
-  accounts.push(account);
+  accounts.push({ ...account, active: true });
   await defaultAdapter.setItem(SALARY_ACCOUNTS_KEY, accounts);
 }
 
@@ -50,21 +57,81 @@ export async function updateSalaryAccount(account: SalaryAccount): Promise<void>
 
 /**
  * Check if an account has any income entries (financial history).
- * Accounts with history cannot be deleted.
  */
 export async function accountHasHistory(accountId: string): Promise<boolean> {
   const entries = await getSalaryIncomeEntries();
   return entries.some(e => e.accountId === accountId);
 }
 
-export async function deleteSalaryAccount(id: string): Promise<{ success: boolean; error?: string }> {
-  const hasHistory = await accountHasHistory(id);
-  if (hasHistory) {
-    return { success: false, error: 'Conta possui histórico financeiro e não pode ser excluída.' };
+/**
+ * Count how many entries an account has
+ */
+export async function getAccountEntryCount(accountId: string): Promise<number> {
+  const entries = await getSalaryIncomeEntries();
+  return entries.filter(e => e.accountId === accountId).length;
+}
+
+/**
+ * Transfer all entries from one account to another
+ */
+export async function transferEntriesToAccount(
+  fromAccountId: string,
+  toAccountId: string
+): Promise<number> {
+  const entries = await getSalaryIncomeEntries();
+  let transferred = 0;
+  for (const entry of entries) {
+    if (entry.accountId === fromAccountId) {
+      entry.accountId = toAccountId;
+      transferred++;
+    }
   }
+  await defaultAdapter.setItem(SALARY_INCOME_KEY, entries);
+  return transferred;
+}
+
+/**
+ * Delete account - handles 3 scenarios:
+ * 1. No history → direct delete
+ * 2. Transfer history → move entries to another account, then delete
+ * 3. Force delete → remove account (entries become orphaned)
+ */
+export async function deleteSalaryAccount(
+  id: string,
+  options?: { transferToAccountId?: string; forceDelete?: boolean }
+): Promise<{ success: boolean; error?: string }> {
+  const hasHistory = await accountHasHistory(id);
+
+  if (hasHistory) {
+    if (options?.transferToAccountId) {
+      // Transfer entries to another account first
+      await transferEntriesToAccount(id, options.transferToAccountId);
+    } else if (options?.forceDelete) {
+      // Delete all entries for this account
+      const entries = await getSalaryIncomeEntries();
+      const filtered = entries.filter(e => e.accountId !== id);
+      await defaultAdapter.setItem(SALARY_INCOME_KEY, filtered);
+    } else {
+      // No option chosen - cannot delete
+      return { success: false, error: 'Conta possui histórico financeiro. Escolha uma ação.' };
+    }
+  }
+
   const accounts = await getSalaryAccounts();
   await defaultAdapter.setItem(SALARY_ACCOUNTS_KEY, accounts.filter(a => a.id !== id));
   return { success: true };
+}
+
+/**
+ * Deactivate an account (soft delete) - preserves all history
+ */
+export async function deactivateSalaryAccount(id: string): Promise<void> {
+  const accounts = await getSalaryAccounts();
+  const index = accounts.findIndex(a => a.id === id);
+  if (index !== -1) {
+    accounts[index].active = false;
+    await defaultAdapter.setItem(SALARY_ACCOUNTS_KEY, accounts);
+  }
 }
 
 // Income entries for salary accounts
@@ -92,6 +159,17 @@ export async function getAllAccountBalances(): Promise<Map<string, number>> {
     balances.set(e.accountId, (balances.get(e.accountId) ?? 0) + e.amount);
   }
   return balances;
+}
+
+/**
+ * Get total salary accounts balance (sum of all active accounts)
+ */
+export async function getTotalSalaryBalance(): Promise<number> {
+  const [accounts, balances] = await Promise.all([
+    getActiveSalaryAccounts(),
+    getAllAccountBalances(),
+  ]);
+  return accounts.reduce((sum, a) => sum + (balances.get(a.id) ?? 0), 0);
 }
 
 /**
@@ -140,32 +218,20 @@ export async function getEntriesByAccount(accountId: string): Promise<SalaryInco
 
 /**
  * Optimize payments: determine the best way to pay expenses using salary accounts.
- * 
- * Priority:
- * 1. Linked (mandatory) account - if it has sufficient balance
- * 2. Single account with highest balance that covers the full amount
- * 3. Combination with fewest accounts needed
- * 
- * Does NOT execute any transfers - only suggests the optimal payment plan.
  */
 export async function optimizePayments(
   expenses: Array<{ id: string; amount: number; mandatoryAccountId?: string }>
 ): Promise<Array<{ expenseId: string; accountId: string; accountName: string; amount: number }>> {
-  const accounts = await getSalaryAccounts();
+  const accounts = await getActiveSalaryAccounts();
   if (accounts.length === 0) return [];
 
-  // Calculate dynamic balances
   const dynamicBalances = await getAllAccountBalances();
-
   const result: Array<{ expenseId: string; accountId: string; accountName: string; amount: number }> = [];
-  
-  // Track remaining balance per account
   const balances = new Map(accounts.map(a => [a.id, dynamicBalances.get(a.id) ?? 0]));
 
   for (const exp of expenses) {
     const expAmount = Math.abs(exp.amount);
     
-    // Priority 1: Mandatory (linked) account
     if (exp.mandatoryAccountId) {
       const account = accounts.find(a => a.id === exp.mandatoryAccountId);
       if (account) {
@@ -197,7 +263,6 @@ export async function optimizePayments(
       }
     }
 
-    // Priority 2: Single account with highest balance
     const sorted = [...balances.entries()]
       .filter(([, bal]) => bal > 0)
       .sort((a, b) => b[1] - a[1]);
@@ -211,7 +276,6 @@ export async function optimizePayments(
       continue;
     }
 
-    // Priority 3: Fewest accounts
     let left = expAmount;
     for (const [accId, accBal] of sorted) {
       if (left <= 0) break;

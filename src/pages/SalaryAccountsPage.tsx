@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, Wallet, Trash2, TrendingUp, ArrowDownCircle } from 'lucide-react';
+import { Plus, Wallet, Trash2, TrendingUp, ArrowDownCircle, Pencil, Ban } from 'lucide-react';
 import { PageContainer } from '@/components/layout/PageContainer';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,7 +8,8 @@ import { useSalaryAccounts, useSalaryAccountEntries } from '@/hooks/useSalaryAcc
 import { formatCurrency } from '@/lib/formatters';
 import { AddSalaryAccountSheet } from '@/components/salary/AddSalaryAccountSheet';
 import { AddSalaryIncomeSheet } from '@/components/salary/AddSalaryIncomeSheet';
-import { SalaryAccount } from '@/lib/salaryAccounts';
+import { EditSalaryAccountSheet } from '@/components/salary/EditSalaryAccountSheet';
+import { SalaryAccount, SalaryAccountWithBalance } from '@/hooks/useSalaryAccounts';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -19,6 +20,16 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { AlertTriangle } from 'lucide-react';
+import { toast } from 'sonner';
 
 function AccountEntries({ accountId }: { accountId: string }) {
   const { entries, loading } = useSalaryAccountEntries(accountId);
@@ -44,19 +55,71 @@ function AccountEntries({ accountId }: { accountId: string }) {
   );
 }
 
+type DeleteAction = 'transfer' | 'force' | null;
+
 export default function SalaryAccountsPage() {
-  const { accounts, loading, createAccount, removeAccount, addIncome, refresh } = useSalaryAccounts();
+  const { accounts, loading, createAccount, editAccount, removeAccount, deactivate, addIncome, refresh } = useSalaryAccounts();
   const [showAddSheet, setShowAddSheet] = useState(false);
   const [showIncomeSheet, setShowIncomeSheet] = useState(false);
-  const [selectedAccount, setSelectedAccount] = useState<SalaryAccount | null>(null);
-  const [accountToDelete, setAccountToDelete] = useState<SalaryAccount | null>(null);
+  const [showEditSheet, setShowEditSheet] = useState(false);
+  const [selectedAccount, setSelectedAccount] = useState<SalaryAccountWithBalance | null>(null);
+  const [accountToDelete, setAccountToDelete] = useState<SalaryAccountWithBalance | null>(null);
+  const [deleteAction, setDeleteAction] = useState<DeleteAction>(null);
+  const [transferTargetId, setTransferTargetId] = useState<string>('');
+  const [deleteHasHistory, setDeleteHasHistory] = useState(false);
 
-  const handleAddIncome = (account: SalaryAccount) => {
+  const handleAddIncome = (account: SalaryAccountWithBalance) => {
     setSelectedAccount(account);
     setShowIncomeSheet(true);
   };
 
-  const totalBalance = accounts.reduce((sum, a) => sum + a.balance, 0);
+  const handleEdit = (account: SalaryAccountWithBalance) => {
+    setSelectedAccount(account);
+    setShowEditSheet(true);
+  };
+
+  const handleDeleteRequest = async (account: SalaryAccountWithBalance) => {
+    setAccountToDelete(account);
+    setDeleteAction(null);
+    setTransferTargetId('');
+    // Check if has history via entryCount (balance > 0 or entries exist)
+    const hasEntries = account.entryCount > 0;
+    setDeleteHasHistory(hasEntries);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!accountToDelete) return;
+
+    if (deleteHasHistory) {
+      if (deleteAction === 'transfer') {
+        if (!transferTargetId) {
+          toast.error('Selecione a conta destino para transferir o histórico.');
+          return;
+        }
+        const success = await removeAccount(accountToDelete.id, { transferToAccountId: transferTargetId });
+        if (success) {
+          toast.success('Conta excluída e histórico transferido com sucesso.');
+          setAccountToDelete(null);
+        }
+      } else if (deleteAction === 'force') {
+        const success = await removeAccount(accountToDelete.id, { forceDelete: true });
+        if (success) {
+          toast.success('Conta e histórico excluídos permanentemente.');
+          setAccountToDelete(null);
+        }
+      }
+    } else {
+      const success = await removeAccount(accountToDelete.id);
+      if (success) {
+        toast.success('Conta excluída com sucesso.');
+        setAccountToDelete(null);
+      }
+    }
+  };
+
+  const activeAccounts = accounts.filter(a => a.active !== false);
+  const totalBalance = activeAccounts.reduce((sum, a) => sum + a.balance, 0);
+  const otherAccounts = activeAccounts.filter(a => a.id !== accountToDelete?.id);
 
   return (
     <PageContainer
@@ -73,16 +136,19 @@ export default function SalaryAccountsPage() {
       <ScrollArea className="h-[calc(100vh-140px)]">
         <div className="space-y-4 pb-4">
           {/* Total Balance */}
-          {accounts.length > 0 && (
+          {activeAccounts.length > 0 && (
             <Card className="bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20">
               <CardContent className="py-4">
                 <p className="text-sm text-muted-foreground">Saldo Total</p>
                 <p className="text-2xl font-bold text-primary">{formatCurrency(totalBalance)}</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Refletido no saldo geral da Home
+                </p>
               </CardContent>
             </Card>
           )}
 
-          {accounts.length === 0 ? (
+          {activeAccounts.length === 0 ? (
             <Card>
               <CardContent className="py-12 text-center">
                 <Wallet className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
@@ -95,7 +161,7 @@ export default function SalaryAccountsPage() {
             </Card>
           ) : (
             <div className="space-y-3">
-              {accounts.map(account => (
+              {activeAccounts.map(account => (
                 <Card key={account.id} className="overflow-hidden">
                   <CardContent className="py-4">
                     <div className="flex items-start justify-between">
@@ -130,7 +196,16 @@ export default function SalaryAccountsPage() {
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => setAccountToDelete(account)}
+                          onClick={() => handleEdit(account)}
+                          title="Editar conta"
+                        >
+                          <Pencil className="h-4 w-4 text-muted-foreground" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleDeleteRequest(account)}
+                          title="Excluir conta"
                         >
                           <Trash2 className="h-4 w-4 text-destructive" />
                         </Button>
@@ -161,30 +236,108 @@ export default function SalaryAccountsPage() {
         }}
       />
 
-      <AlertDialog open={!!accountToDelete} onOpenChange={(open) => !open && setAccountToDelete(null)}>
+      <EditSalaryAccountSheet
+        open={showEditSheet}
+        onOpenChange={setShowEditSheet}
+        account={selectedAccount}
+        onSubmit={async (account) => {
+          await editAccount(account);
+          refresh();
+        }}
+      />
+
+      {/* Delete Account Dialog */}
+      <AlertDialog open={!!accountToDelete} onOpenChange={(open) => { if (!open) setAccountToDelete(null); }}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Excluir conta salário?</AlertDialogTitle>
-            <AlertDialogDescription>
-              A conta "{accountToDelete?.name}" será excluída permanentemente.
+            <AlertDialogTitle>Excluir conta "{accountToDelete?.name}"?</AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-3">
+                {deleteHasHistory ? (
+                  <>
+                    <Alert variant="destructive" className="bg-destructive/10 border-destructive/30">
+                      <AlertTriangle className="h-4 w-4" />
+                      <AlertDescription className="text-sm">
+                        Esta conta possui <strong>{accountToDelete?.entryCount} lançamento(s)</strong> e saldo de{' '}
+                        <strong>{formatCurrency(accountToDelete?.balance ?? 0)}</strong>.
+                        A exclusão afetará o saldo histórico e o saldo geral exibido na Home.
+                      </AlertDescription>
+                    </Alert>
+
+                    <p className="text-sm font-medium">Escolha uma ação:</p>
+
+                    <div className="space-y-2">
+                      {otherAccounts.length > 0 && (
+                        <label
+                          className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
+                            deleteAction === 'transfer' ? 'border-primary bg-primary/5' : 'border-border'
+                          }`}
+                          onClick={() => setDeleteAction('transfer')}
+                        >
+                          <input
+                            type="radio"
+                            name="deleteAction"
+                            checked={deleteAction === 'transfer'}
+                            onChange={() => setDeleteAction('transfer')}
+                            className="mt-1"
+                          />
+                          <div className="flex-1">
+                            <p className="text-sm font-medium">Transferir histórico para outra conta</p>
+                            <p className="text-xs text-muted-foreground">
+                              Os lançamentos serão movidos para a conta selecionada.
+                            </p>
+                            {deleteAction === 'transfer' && (
+                              <Select value={transferTargetId} onValueChange={setTransferTargetId}>
+                                <SelectTrigger className="mt-2">
+                                  <SelectValue placeholder="Selecionar conta destino..." />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {otherAccounts.map(a => (
+                                    <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            )}
+                          </div>
+                        </label>
+                      )}
+
+                      <label
+                        className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
+                          deleteAction === 'force' ? 'border-destructive bg-destructive/5' : 'border-border'
+                        }`}
+                        onClick={() => setDeleteAction('force')}
+                      >
+                        <input
+                          type="radio"
+                          name="deleteAction"
+                          checked={deleteAction === 'force'}
+                          onChange={() => setDeleteAction('force')}
+                          className="mt-1"
+                        />
+                        <div>
+                          <p className="text-sm font-medium text-destructive">Excluir conta e todo histórico</p>
+                          <p className="text-xs text-muted-foreground">
+                            Todos os lançamentos serão perdidos permanentemente. O saldo será removido.
+                          </p>
+                        </div>
+                      </label>
+                    </div>
+                  </>
+                ) : (
+                  <p>A conta será excluída permanentemente. Esta ação não pode ser desfeita.</p>
+                )}
+              </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
             <AlertDialogAction
-              onClick={async () => {
-                if (accountToDelete) {
-                  const success = await removeAccount(accountToDelete.id);
-                  if (success) {
-                    setAccountToDelete(null);
-                  } else {
-                    setAccountToDelete(null);
-                  }
-                }
-              }}
+              onClick={handleConfirmDelete}
+              disabled={deleteHasHistory && !deleteAction}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              Excluir
+              {deleteAction === 'transfer' ? 'Transferir e Excluir' : 'Excluir'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

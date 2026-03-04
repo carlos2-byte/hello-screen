@@ -11,6 +11,7 @@ import { getTransactionsByMonth, Transaction, getSettings } from './storage';
 import { getInvestmentsForCoverage, calculateDailyYield } from './investments';
 import { getLocalDateString, parseLocalDate, getLocalMonth, addDaysToDate } from './dateUtils';
 import { ConsolidatedInvoice } from './invoiceUtils';
+import { getTotalSalaryBalance } from './salaryAccounts';
 
 type StatementItem = Transaction | ConsolidatedInvoice;
 
@@ -68,7 +69,11 @@ export async function calculateRealTimeBalances(
     }
   }
   
-  // Saldo Atual = Entradas - despesas/faturas já vencidas
+  // Include salary account balances in the total income
+  const salaryBalance = await getTotalSalaryBalance();
+  totalIncome += salaryBalance;
+  
+  // Saldo Atual = Entradas (including salary) - despesas/faturas já vencidas
   const currentBalance = totalIncome - pastExpenses;
   
   // Calculate daily yield based on current balance using settings rate

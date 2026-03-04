@@ -6,15 +6,20 @@ import {
   addSalaryAccount,
   updateSalaryAccount,
   deleteSalaryAccount,
+  deactivateSalaryAccount,
   addSalaryIncomeEntry,
   getEntriesByAccount,
   getAllAccountBalances,
+  getAccountEntryCount,
 } from '@/lib/salaryAccounts';
 import { generateId } from '@/lib/formatters';
 import { toast } from 'sonner';
 
+export type { SalaryAccount } from '@/lib/salaryAccounts';
+
 export interface SalaryAccountWithBalance extends SalaryAccount {
   balance: number;
+  entryCount: number;
 }
 
 export function useSalaryAccounts() {
@@ -28,9 +33,14 @@ export function useSalaryAccounts() {
         getSalaryAccounts(),
         getAllAccountBalances(),
       ]);
-      setAccounts(loaded.map(a => ({
+      // Get entry counts in parallel
+      const entryCounts = await Promise.all(
+        loaded.map(a => getAccountEntryCount(a.id))
+      );
+      setAccounts(loaded.map((a, i) => ({
         ...a,
         balance: balances.get(a.id) ?? 0,
+        entryCount: entryCounts[i],
       })));
     } finally {
       setLoading(false);
@@ -53,14 +63,22 @@ export function useSalaryAccounts() {
     await loadAccounts();
   }, [loadAccounts]);
 
-  const removeAccount = useCallback(async (id: string): Promise<boolean> => {
-    const result = await deleteSalaryAccount(id);
+  const removeAccount = useCallback(async (
+    id: string,
+    options?: { transferToAccountId?: string; forceDelete?: boolean }
+  ): Promise<boolean> => {
+    const result = await deleteSalaryAccount(id, options);
     if (!result.success) {
       toast.error(result.error);
       return false;
     }
     await loadAccounts();
     return true;
+  }, [loadAccounts]);
+
+  const deactivate = useCallback(async (id: string) => {
+    await deactivateSalaryAccount(id);
+    await loadAccounts();
   }, [loadAccounts]);
 
   const addIncome = useCallback(async (data: Omit<SalaryIncomeEntry, 'id'>): Promise<boolean> => {
@@ -80,6 +98,7 @@ export function useSalaryAccounts() {
     createAccount,
     editAccount,
     removeAccount,
+    deactivate,
     addIncome,
     refresh: loadAccounts,
   };
