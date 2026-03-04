@@ -30,7 +30,10 @@ function AccountEntries({ accountId }: { accountId: string }) {
     <div className="space-y-1 mt-2">
       {entries.slice(0, 3).map(entry => (
         <div key={entry.id} className="flex items-center justify-between text-xs">
-          <span className="text-muted-foreground">{entry.description || 'Receita'} - {entry.date}</span>
+          <span className="text-muted-foreground">
+            {entry.description || 'Receita'} - {entry.date}
+            {entry.consolidated && <span className="ml-1 text-primary/60">🔒</span>}
+          </span>
           <span className="text-emerald-500 font-medium">+{formatCurrency(entry.amount)}</span>
         </div>
       ))}
@@ -168,8 +171,12 @@ export default function SalaryAccountsPage() {
             <AlertDialogAction
               onClick={async () => {
                 if (accountToDelete) {
-                  await removeAccount(accountToDelete.id);
-                  setAccountToDelete(null);
+                  const success = await removeAccount(accountToDelete.id);
+                  if (success) {
+                    setAccountToDelete(null);
+                  } else {
+                    setAccountToDelete(null);
+                  }
                 }
               }}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"

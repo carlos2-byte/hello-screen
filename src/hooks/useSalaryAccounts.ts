@@ -10,6 +10,7 @@ import {
   getEntriesByAccount,
 } from '@/lib/salaryAccounts';
 import { generateId } from '@/lib/formatters';
+import { toast } from 'sonner';
 
 export function useSalaryAccounts() {
   const [accounts, setAccounts] = useState<SalaryAccount[]>([]);
@@ -41,16 +42,25 @@ export function useSalaryAccounts() {
     await loadAccounts();
   }, [loadAccounts]);
 
-  const removeAccount = useCallback(async (id: string) => {
-    await deleteSalaryAccount(id);
+  const removeAccount = useCallback(async (id: string): Promise<boolean> => {
+    const result = await deleteSalaryAccount(id);
+    if (!result.success) {
+      toast.error(result.error);
+      return false;
+    }
     await loadAccounts();
+    return true;
   }, [loadAccounts]);
 
-  const addIncome = useCallback(async (data: Omit<SalaryIncomeEntry, 'id'>) => {
+  const addIncome = useCallback(async (data: Omit<SalaryIncomeEntry, 'id'>): Promise<boolean> => {
     const entry: SalaryIncomeEntry = { ...data, id: generateId() };
-    await addSalaryIncomeEntry(entry);
-    await loadAccounts(); // Refresh to get updated balance
-    return entry;
+    const result = await addSalaryIncomeEntry(entry);
+    if (!result.success) {
+      toast.error(result.error);
+      return false;
+    }
+    await loadAccounts();
+    return true;
   }, [loadAccounts]);
 
   return {
