@@ -37,6 +37,13 @@ import { formatCurrency, getCurrentMonth } from '@/lib/formatters';
 import { formatDateBR } from '@/lib/dateUtils';
 import { Investment, getMonthlyYieldEstimate, getDailyYieldEstimate, getInvestmentTaxInfo } from '@/lib/investments';
 import { toast } from '@/hooks/use-toast';
+import { CurrencyInput, parseCurrencyValue } from '@/components/ui/currency-input';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 
 export default function InvestmentsPage() {
   const { 
