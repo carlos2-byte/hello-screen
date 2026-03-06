@@ -378,7 +378,7 @@ export function AddTransactionSheet({
                         type="button"
                         variant={paymentMethod === 'credit' ? 'default' : 'outline'}
                         className="flex flex-col h-auto py-3 gap-1"
-                        onClick={() => { setPaymentMethod('credit'); setMandatoryAccountId(''); }}
+                        onClick={() => setPaymentMethod('credit')}
                       >
                         <CardIcon className="h-5 w-5" />
                         <span className="text-xs">Crédito</span>
@@ -406,14 +406,12 @@ export function AddTransactionSheet({
               </>
             )}
 
-            {/* Mandatory Salary Account - hide when payment is credit card */}
-            {paymentMethod !== 'credit' && (
-              <AccountSelector
-                value={mandatoryAccountId}
-                onChange={setMandatoryAccountId}
-                label={type === 'income' ? 'Vincular à conta salário' : 'Conta obrigatória'}
-              />
-            )}
+            {/* Mandatory Salary Account (for all transaction types) */}
+            <AccountSelector
+              value={mandatoryAccountId}
+              onChange={setMandatoryAccountId}
+              label={type === 'income' ? 'Vincular à conta salário' : 'Conta obrigatória'}
+            />
 
             {/* Submit Button */}
             <Button type="submit" className="w-full h-12" disabled={isSubmitting}>
