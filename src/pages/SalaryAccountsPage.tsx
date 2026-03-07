@@ -125,7 +125,7 @@ export default function SalaryAccountsPage() {
     <PageContainer
       header={
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-center flex-1">Contas Salário</h1>
+          <h1 className="text-2xl font-bold text-center flex-1">Receitas</h1>
           <Button onClick={() => setShowAddSheet(true)} size="sm">
             <Plus className="h-4 w-4 mr-1" />
             Nova

@@ -7,7 +7,7 @@ const navItems = [
   { to: '/dashboard', icon: BarChart3, label: 'Relatório' },
   { to: '/investments', icon: TrendingUp, label: 'Invest.' },
   { to: '/cards', icon: CreditCard, label: 'Cartões' },
-  { to: '/salary', icon: Wallet, label: 'Contas' },
+  { to: '/salary', icon: Wallet, label: 'Receitas' },
   { to: '/settings', icon: Settings, label: 'Config' },
 ];
 
