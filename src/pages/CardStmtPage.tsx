@@ -158,6 +158,7 @@ export default function CardStatementPage() {
             <Button
               variant="ghost"
               size="icon"
+              className="shrink-0"
               onClick={() => setShowEditCard(true)}
             >
               <Pencil className="h-5 w-5" />
@@ -165,7 +166,7 @@ export default function CardStatementPage() {
             <Button
               variant="ghost"
               size="icon"
-              className="text-destructive hover:text-destructive"
+              className="text-destructive hover:text-destructive shrink-0"
               onClick={() => setShowDeleteCard(true)}
             >
               <Trash2 className="h-5 w-5" />

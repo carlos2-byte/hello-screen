@@ -184,7 +184,7 @@ export default function SalaryAccountsPage() {
                           <span className="text-xs font-normal text-muted-foreground ml-1">(calculado)</span>
                         </p>
                       </div>
-                      <div className="flex gap-1">
+                      <div className="flex gap-1 shrink-0">
                         <Button
                           variant="ghost"
                           size="icon"

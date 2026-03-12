@@ -382,7 +382,7 @@ export default function InvestmentsPage() {
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="text-destructive h-8 w-8"
+                          className="text-destructive h-8 w-8 shrink-0"
                           onClick={(e) => { e.stopPropagation(); setInvestmentToDelete(inv); }}
                         >
                           <Trash2 className="h-4 w-4" />
