@@ -39,8 +39,8 @@ export function PendingTransactionsAlert({ items, onTogglePaid, onDismiss }: Pen
       <AlertDescription>
         <div className="space-y-1.5 mt-1">
           {overdueItems.map(item => (
-            <div key={item.id} className="flex items-center justify-between gap-2">
-              <span className="text-sm truncate text-destructive font-medium">
+            <div key={item.id} className="flex items-center justify-between gap-2 min-w-0">
+              <span className="text-sm truncate text-destructive font-medium flex-1 min-w-0">
                 {item.description} — {formatCurrency(item.amount)}
               </span>
               <Button

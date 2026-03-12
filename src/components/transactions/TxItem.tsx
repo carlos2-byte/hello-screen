@@ -109,7 +109,7 @@ export function TransactionItem({
 
   return (
     <div className={cn(
-      "flex items-center gap-2 py-2 group rounded-lg px-1 transition-colors",
+      "flex items-center gap-2 py-2 group rounded-lg px-1 transition-colors min-w-0",
       showStatusIndicator && !isPaid && isOverdue && "bg-destructive/10",
       showStatusIndicator && !isPaid && !isOverdue && "bg-warning/10",
     )}>
